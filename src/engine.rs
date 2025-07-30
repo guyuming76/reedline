@@ -196,6 +196,11 @@ impl Drop for Reedline {
 impl Reedline {
     const FILTERED_ITEM_ID: HistoryItemId = HistoryItemId(i64::MAX);
 
+    // added by guyuming to be used in rfm
+    pub fn set_line_buffer(&mut self, line_buffer: LineBuffer, undo_behavior: UndoBehavior) {
+        self.editor.set_line_buffer(line_buffer, undo_behavior);
+    }
+    
     /// Create a new [`Reedline`] engine with a local [`History`] that is not synchronized to a file.
     #[must_use]
     pub fn create() -> Self {
@@ -1974,3 +1979,4 @@ mod tests {
         f(Reedline::create());
     }
 }
+
