@@ -46,6 +46,9 @@ use {
     },
 };
 
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+
 // The POLL_WAIT is used to specify for how long the POLL should wait for
 // events, to accelerate the handling of paste or compound resize events. Having
 // a POLL_WAIT of zero means that every single event is treated as soon as it
@@ -170,6 +173,8 @@ pub struct Reedline {
 
     #[cfg(feature = "external_printer")]
     external_printer: Option<ExternalPrinter<String>>,
+
+    interrupt_flag: Arc<AtomicBool>,
 }
 
 struct BufferEditor {
@@ -194,6 +199,10 @@ impl Drop for Reedline {
 }
 
 impl Reedline {
+    pub fn interrupt(&self) {
+        self.interrupt_flag.store(true, Ordering::Relaxed);
+    }
+
     const FILTERED_ITEM_ID: HistoryItemId = HistoryItemId(i64::MAX);
 
     // added by guyuming to be used in rfm
@@ -249,6 +258,7 @@ impl Reedline {
             immediately_accept: false,
             #[cfg(feature = "external_printer")]
             external_printer: None,
+            interrupt_flag: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -715,6 +725,12 @@ impl Reedline {
         self.repaint(prompt)?;
 
         loop {
+            // 检查中断标志
+            if self.interrupt_flag.load(Ordering::Relaxed) {
+                self.interrupt_flag.store(false, Ordering::Relaxed);
+                return Ok(Signal::Interrupted);
+            }
+
             #[cfg(feature = "external_printer")]
             if let Some(ref external_printer) = self.external_printer {
                 // get messages from printer as crlf separated "lines"

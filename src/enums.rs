@@ -12,6 +12,7 @@ pub enum Signal {
     CtrlC, // Interrupt current editing
     /// Abort with `Ctrl+D` signalling `EOF` or abort of a whole interactive session
     CtrlD, // End terminal session
+    Interrupted,
 }
 
 /// Scope of text object operation ("i" inner or "a" around)
